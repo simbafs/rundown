@@ -1,0 +1,168 @@
+---
+import '../styles/global.css'
+const room = Astro.url.searchParams.get('room') ?? 'R0'
+---
+
+<html lang="zh-Hant-TW" data-theme="light">
+	<head>
+		<meta charset="utf-8" />
+		<title>Rundown 看板</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+	</head>
+
+	<body class="min-h-screen bg-base-200 flex items-center justify-center">
+		<div class="card bg-base-100 shadow-2xl max-w-5xl w-full mx-4">
+			<div class="card-body gap-4">
+				<!-- 標題：房間 + 現在時間 -->
+				<div class="flex flex-col items-center gap-1">
+					<div id="room-title" class="text-3xl md:text-4xl font-mono tracking-[0.2em]">
+						{room}
+					</div>
+					<div id="now-time" class="text-xl md:text-2xl font-mono text-base-content/70">--:--</div>
+				</div>
+
+				<!-- rundown 表格 -->
+				<div class="mt-4 overflow-x-auto">
+					<table class="table table-lg w-full font-mono text-xl md:text-2xl">
+						<thead>
+							<tr class="border-b-4 border-base-content">
+								<th class="w-1/2 text-left">名稱</th>
+								<th class="w-1/4 text-center">開始</th>
+								<th class="w-1/4 text-center">結束</th>
+							</tr>
+						</thead>
+						<tbody id="rundown-body"></tbody>
+					</table>
+				</div>
+
+				<div id="updated-at" class="text-right text-xs md:text-sm text-base-content/60 mt-2"></div>
+			</div>
+		</div>
+	</body>
+</html>
+<script>
+	const room = new URLSearchParams(location.search).get('room') || 'R0'
+	const roomTitle = document.getElementById('room-title')!
+	const nowTimeEl = document.getElementById('now-time')!
+	const tbody = document.getElementById('rundown-body')!
+	const updatedAtEl = document.getElementById('updated-at')!
+
+	roomTitle.textContent = room
+
+	type Event = {
+		name: string
+		room: string
+		start: string // HH:MM
+		end: string // HH:MM
+	}
+
+	function updateClock() {
+		const now = new Date()
+		const formatter = new Intl.DateTimeFormat('zh-TW', {
+			hour: '2-digit',
+			minute: '2-digit',
+			hour12: false,
+		})
+		nowTimeEl.textContent = formatter.format(now)
+	}
+	updateClock()
+	setInterval(updateClock, 1000)
+
+	function parseTimeToMinutes(str: string) {
+		if (!str) return 0
+		const m = String(str)
+			.trim()
+			.match(/^(\d{1,2}):(\d{2})$/)
+		if (!m) return 0
+		const h = parseInt(m[1], 10)
+		const min = parseInt(m[2], 10)
+		return h * 60 + min
+	}
+
+	function createNowLineRow() {
+		const tr = document.createElement('tr')
+		const td = document.createElement('td')
+		td.colSpan = 3
+		const div = document.createElement('div')
+		div.className = 'h-1 w-full bg-primary shadow-md shadow-primary/60'
+		td.appendChild(div)
+		tr.appendChild(td)
+		return tr
+	}
+
+	function renderRundown(events: Event[]) {
+		tbody.innerHTML = ''
+
+		const parsed = events
+			.filter(e => e.name && e.start && e.end)
+			.map(e => ({
+				...e,
+				startMinutes: parseTimeToMinutes(e.start),
+				endMinutes: parseTimeToMinutes(e.end),
+			}))
+			.filter(e => e.startMinutes !== null && e.endMinutes !== null)
+			.sort((a, b) => a.startMinutes - b.startMinutes)
+
+		const now = new Date()
+		const nowMinutes = now.getHours() * 60 + now.getMinutes()
+
+		let insertedNowLine = false
+
+		parsed.forEach((ev, idx) => {
+			if (!insertedNowLine) {
+				if (nowMinutes >= ev.startMinutes && nowMinutes < ev.endMinutes) {
+					tbody.appendChild(createNowLineRow())
+					insertedNowLine = true
+				}
+				if (idx === 0 && nowMinutes < ev.startMinutes && !insertedNowLine) {
+					tbody.appendChild(createNowLineRow())
+					insertedNowLine = true
+				}
+			}
+
+			const tr = document.createElement('tr')
+			if (nowMinutes >= ev.startMinutes && nowMinutes < ev.endMinutes) {
+				tr.className = 'bg-primary/10'
+			}
+
+			const tdName = document.createElement('td')
+			tdName.textContent = ev.name
+			tdName.className = 'text-left align-middle'
+
+			const tdStart = document.createElement('td')
+			tdStart.textContent = ev.start
+			tdStart.className = 'text-center align-middle'
+
+			const tdEnd = document.createElement('td')
+			tdEnd.textContent = ev.end
+			tdEnd.className = 'text-center align-middle'
+
+			tr.appendChild(tdName)
+			tr.appendChild(tdStart)
+			tr.appendChild(tdEnd)
+			tbody.appendChild(tr)
+		})
+
+		if (!insertedNowLine && parsed.length > 0 && nowMinutes >= parsed[parsed.length - 1].endMinutes) {
+			tbody.appendChild(createNowLineRow())
+		}
+
+		updatedAtEl.textContent = 'Last update: ' + new Date().toLocaleTimeString('zh-TW', { hour12: false })
+	}
+
+	async function fetchRundown() {
+		try {
+			const res = await fetch('/api/rundown?room=' + encodeURIComponent(room))
+			if (!res.ok) throw new Error('HTTP ' + res.status)
+			const data = await res.json()
+			console.log(data.events)
+			renderRundown(data.events || [])
+		} catch (err) {
+			console.error('fetch rundown error', err)
+			updatedAtEl.textContent = '讀取失敗'
+		}
+	}
+
+	fetchRundown()
+	setInterval(fetchRundown, 30000)
+</script>
