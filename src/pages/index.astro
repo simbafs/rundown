@@ -18,7 +18,13 @@ const room = Astro.url.searchParams.get('room') ?? 'R0'
 					<div id="room-title" class="text-3xl md:text-4xl font-mono tracking-[0.2em]">
 						{room}
 					</div>
-					<div id="now-time" class="text-xl md:text-2xl font-mono text-base-content/70">--:--:--</div>
+					<span class="countdown font-mono text-2xl">
+						<span id="hour" style="--value:10;" aria-live="polite" aria-label="10">10</span>
+						:
+						<span id="minute" style="--value:24; --digits: 2;" aria-live="polite" aria-label="24">24</span>
+						:
+						<span id="second" style="--value:59; --digits: 2;" aria-live="polite" aria-label="59">59</span>
+					</span>
 				</div>
 
 				<!-- rundown 表格 -->
@@ -57,7 +63,9 @@ const room = Astro.url.searchParams.get('room') ?? 'R0'
 	const $ = document.querySelector.bind(document)
 
 	const roomTitle = $<HTMLDivElement>('#room-title')!
-	const nowTimeEl = $<HTMLDivElement>('#now-time')!
+	const nowHour = $<HTMLSpanElement>('#hour')!
+	const nowMinute = $<HTMLSpanElement>('#minute')!
+	const nowSecond = $<HTMLSpanElement>('#second')!
 	const tbody = $<HTMLTableSectionElement>('#rundown-body')!
 	const updatedAtEl = $<HTMLDivElement>('#updated-at')!
 	const nowLineEl = $<HTMLDivElement>('#now-line')!
@@ -91,7 +99,18 @@ const room = Astro.url.searchParams.get('room') ?? 'R0'
 	}
 
 	function updateClock() {
-		nowTimeEl.textContent = formatTime(getNow())
+		const now = getNow()
+		const hours = String(now.getHours()).padStart(2, '0')
+		const minutes = String(now.getMinutes()).padStart(2, '0')
+		const seconds = String(now.getSeconds()).padStart(2, '0')
+
+		nowHour.style.setProperty('--value', hours)
+		nowMinute.style.setProperty('--value', minutes)
+		nowSecond.style.setProperty('--value', seconds)
+
+		nowHour.innerText = hours
+		nowMinute.innerText = minutes
+		nowSecond.innerText = seconds
 	}
 	updateClock()
 	setInterval(updateClock, 1000)
