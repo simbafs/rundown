@@ -158,6 +158,11 @@ const room = Astro.url.searchParams.get('room') ?? 'R0'
 
 			cumHeight += height
 		})
+
+		nowLineEl.scrollIntoView({
+			block: 'center',
+			behavior: 'smooth',
+		})
 	}
 
 	// 假設欄位：A=名稱, B=開始, C=結束, D=地點
