@@ -70,13 +70,13 @@ const room = Astro.url.searchParams.get('room') ?? 'R0'
 
 	const $ = document.querySelector.bind(document)
 
-	const roomTitle = $<HTMLSelectElement>('#room')!
-	const nowHour = $<HTMLSpanElement>('#hour')!
-	const nowMinute = $<HTMLSpanElement>('#minute')!
-	const nowSecond = $<HTMLSpanElement>('#second')!
-	const tbody = $<HTMLTableSectionElement>('#rundown-body')!
-	const updatedAtEl = $<HTMLDivElement>('#updated-at')!
-	const nowLineEl = $<HTMLDivElement>('#now-line')!
+	const $room = $<HTMLSelectElement>('#room')!
+	const $hour = $<HTMLSpanElement>('#hour')!
+	const $minute = $<HTMLSpanElement>('#minute')!
+	const $second = $<HTMLSpanElement>('#second')!
+	const $tbody = $<HTMLTableSectionElement>('#rundown-body')!
+	const $updatedAt = $<HTMLDivElement>('#updated-at')!
+	const $line = $<HTMLDivElement>('#now-line')!
 
 	type Event = {
 		name: string
@@ -110,13 +110,13 @@ const room = Astro.url.searchParams.get('room') ?? 'R0'
 		const minutes = String(now.getMinutes()).padStart(2, '0')
 		const seconds = String(now.getSeconds()).padStart(2, '0')
 
-		nowHour.style.setProperty('--value', hours)
-		nowMinute.style.setProperty('--value', minutes)
-		nowSecond.style.setProperty('--value', seconds)
+		$hour.style.setProperty('--value', hours)
+		$minute.style.setProperty('--value', minutes)
+		$second.style.setProperty('--value', seconds)
 
-		nowHour.innerText = hours
-		nowMinute.innerText = minutes
-		nowSecond.innerText = seconds
+		$hour.innerText = hours
+		$minute.innerText = minutes
+		$second.innerText = seconds
 	}
 	updateClock()
 	setInterval(updateClock, 1000)
@@ -135,7 +135,7 @@ const room = Astro.url.searchParams.get('room') ?? 'R0'
 	function renderRundown(events: Event[]) {
 		let cumHeight = 0
 
-		tbody.innerHTML = ''
+		$tbody.innerHTML = ''
 
 		const parsed = events
 			.map(ev => {
@@ -154,7 +154,7 @@ const room = Astro.url.searchParams.get('room') ?? 'R0'
 		let lineDrawen = false
 
 		parsed.forEach(ev => {
-			const tr = tbody.insertRow()
+			const tr = $tbody.insertRow()
 
 			const height = Math.max(ev.durationMinutes * PX_PER_MINUTE, HEIGHT_THRESHOLD)
 
@@ -164,7 +164,7 @@ const room = Astro.url.searchParams.get('room') ?? 'R0'
 				// 畫橫線
 				const offset =
 					(Math.max(nowMinutes - ev.startMinutes, 0) / ev.durationMinutes) * height + cumHeight + THEAD_HEIGHT
-				nowLineEl.style.top = `${offset}px`
+				$line.style.top = `${offset}px`
 				tr.className = 'bg-primary/10'
 				lineDrawen = true
 			}
@@ -184,7 +184,7 @@ const room = Astro.url.searchParams.get('room') ?? 'R0'
 			cumHeight += height
 		})
 
-		nowLineEl.scrollIntoView({
+		$line.scrollIntoView({
 			block: 'center',
 			behavior: 'smooth',
 		})
@@ -224,21 +224,21 @@ const room = Astro.url.searchParams.get('room') ?? 'R0'
 			const events = parseCsv(csv, room)
 			console.log(events)
 			renderRundown(events)
-			updatedAtEl.textContent = `最後更新：${formatTime(getNow())}（按一下提前更新）`
+			$updatedAt.textContent = `最後更新：${formatTime(getNow())}（按一下提前更新）`
 		} catch (err) {
 			console.error('fetch rundown error', err)
-			updatedAtEl.textContent = '讀取失敗（按一下提前更新）'
+			$updatedAt.textContent = '讀取失敗（按一下提前更新）'
 		}
 	}
 
 	function setRoom() {
-		room = roomTitle.value
+		room = $room.value
 		history.replaceState(null, '', `?room=${room}`)
 		fetchRundown()
 	}
 
-	roomTitle.addEventListener('change', setRoom)
+	$room.addEventListener('change', setRoom)
 	setRoom()
 	setInterval(fetchRundown, 30 * 1000)
-	updatedAtEl.addEventListener('click', fetchRundown)
+	$updatedAt.addEventListener('click', fetchRundown)
 </script>
