@@ -41,6 +41,8 @@ const room = Astro.url.searchParams.get('room') ?? 'R0'
 	</body>
 </html>
 <script>
+	const SHEETURL =
+		'https://docs.google.com/spreadsheets/d/e/2PACX-1vQMJlpt3adXG_zgK36gtQbNjQvmEmt5-a60PKiYMgvrgy9Ni4GmPD1sPj0036DnEWXflOqPt9n_W57o/pub?output=csv'
 	const room = new URLSearchParams(location.search).get('room') || 'R0'
 	const roomTitle = document.getElementById('room-title')!
 	const nowTimeEl = document.getElementById('now-time')!
@@ -150,13 +152,40 @@ const room = Astro.url.searchParams.get('room') ?? 'R0'
 		updatedAtEl.textContent = 'Last update: ' + new Date().toLocaleTimeString('zh-TW', { hour12: false })
 	}
 
+	// 假設欄位：A=名稱, B=開始, C=結束, D=地點
+	function parseCsv(csvText: string, room: string): Event[] {
+		const lines = csvText
+			.split(/\r?\n/)
+			.map(l => l.trim())
+			.filter(l => l.length > 0)
+
+		if (lines.length <= 1) return []
+
+		const events: Event[] = []
+
+		for (let i = 1; i < lines.length; i++) {
+			const cols = lines[i].split(',')
+			const [name, start, end, place] = [cols[0] ?? '', cols[1] ?? '', cols[2] ?? '', cols[3] ?? ''].map(c =>
+				c.trim(),
+			)
+
+			if (!name) continue
+			if (room && place && place !== room) continue
+
+			events.push({ name, start, end, room: place })
+		}
+
+		return events
+	}
+
 	async function fetchRundown() {
 		try {
-			const res = await fetch('/api/rundown?room=' + encodeURIComponent(room))
+			const res = await fetch(SHEETURL)
 			if (!res.ok) throw new Error('HTTP ' + res.status)
-			const data = await res.json()
-			console.log(data.events)
-			renderRundown(data.events || [])
+			const csv = await res.text()
+			const events = parseCsv(csv, room)
+			console.log(events)
+			renderRundown(events)
 		} catch (err) {
 			console.error('fetch rundown error', err)
 			updatedAtEl.textContent = '讀取失敗'
@@ -164,5 +193,5 @@ const room = Astro.url.searchParams.get('room') ?? 'R0'
 	}
 
 	fetchRundown()
-	setInterval(fetchRundown, 30000)
+	setInterval(fetchRundown, 30 * 1000)
 </script>
