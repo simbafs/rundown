@@ -15,9 +15,17 @@ const room = Astro.url.searchParams.get('room') ?? 'R0'
 			<div class="card-body gap-4 grow h-1">
 				<!-- 標題：房間 + 現在時間 -->
 				<div class="flex flex-col items-center gap-1">
-					<div id="room-title" class="text-3xl md:text-4xl font-mono tracking-[0.2em]">
-						{room}
-					</div>
+					<select
+						id="room"
+						class="select select-ghost text-3xl font-mono md:text-4xl text-center"
+						value={room}
+					>
+						<option value="R0">R0</option>
+						<option value="R1">R1</option>
+						<option value="R2">R2</option>
+						<option value="R3">R3</option>
+						<option value="S">S</option>
+					</select>
 					<span class="countdown font-mono text-2xl">
 						<span id="hour" style="--value:10;" aria-live="polite" aria-label="10">10</span>
 						:
@@ -58,19 +66,17 @@ const room = Astro.url.searchParams.get('room') ?? 'R0'
 	const HEIGHT_THRESHOLD = 60 // 只有超過 60px 才用時間控制高度
 	const THEAD_HEIGHT = 60 - 4 / 2 // 扣掉線的高度
 
-	const room = new URLSearchParams(location.search).get('room') || 'R0'
+	let room = new URLSearchParams(location.search).get('room') || 'R0'
 
 	const $ = document.querySelector.bind(document)
 
-	const roomTitle = $<HTMLDivElement>('#room-title')!
+	const roomTitle = $<HTMLSelectElement>('#room')!
 	const nowHour = $<HTMLSpanElement>('#hour')!
 	const nowMinute = $<HTMLSpanElement>('#minute')!
 	const nowSecond = $<HTMLSpanElement>('#second')!
 	const tbody = $<HTMLTableSectionElement>('#rundown-body')!
 	const updatedAtEl = $<HTMLDivElement>('#updated-at')!
 	const nowLineEl = $<HTMLDivElement>('#now-line')!
-
-	roomTitle.textContent = room
 
 	type Event = {
 		name: string
@@ -224,8 +230,15 @@ const room = Astro.url.searchParams.get('room') ?? 'R0'
 			updatedAtEl.textContent = '讀取失敗（按一下提前更新）'
 		}
 	}
-	fetchRundown()
-	setInterval(fetchRundown, 30 * 1000)
 
+	function setRoom() {
+		room = roomTitle.value
+		history.replaceState(null, '', `?room=${room}`)
+		fetchRundown()
+	}
+
+	roomTitle.addEventListener('change', setRoom)
+	setRoom()
+	setInterval(fetchRundown, 30 * 1000)
 	updatedAtEl.addEventListener('click', fetchRundown)
 </script>
