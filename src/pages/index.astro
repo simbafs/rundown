@@ -24,11 +24,11 @@ const room = Astro.url.searchParams.get('room') ?? 'R0'
 
 		<div class="w-full flex justify-center">
 			<span class="countdown font-mono text-2xl">
-				<span id="hour" style="--value:10;" aria-live="polite" aria-label="10">10</span>
+				<span id="hour" style="--value:00; --digits:2;" aria-live="polite" aria-label="00">00</span>
 				:
-				<span id="minute" style="--value:24; --digits: 2;" aria-live="polite" aria-label="24">24</span>
+				<span id="minute" style="--value:00; --digits: 2;" aria-live="polite" aria-label="00">00</span>
 				:
-				<span id="second" style="--value:59; --digits: 2;" aria-live="polite" aria-label="59">59</span>
+				<span id="second" style="--value:00; --digits: 2;" aria-live="polite" aria-label="00">00</span>
 			</span>
 		</div>
 
@@ -55,8 +55,8 @@ const room = Astro.url.searchParams.get('room') ?? 'R0'
 	</body>
 </html>
 <script>
-	const SHEETURL =
-		'https://docs.google.com/spreadsheets/d/e/2PACX-1vQMJlpt3adXG_zgK36gtQbNjQvmEmt5-a60PKiYMgvrgy9Ni4GmPD1sPj0036DnEWXflOqPt9n_W57o/pub?gid=0&single=true&output=csv'
+	const APIURL =
+		'https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLgZpasjcZZboL6C4RvbsO4qFBz8ePDGxZKIAUclcIALRjIkd4BXJsbUXxa_nl9kGrtzVf-Nb3lrqSWb5mppP8ZWdR0ChsBsxCl708MzJoBQJFTaED5LhOuUgU3o3zCFPFKS1QxMOqDcQ-Vn61uybQUBqs4zHPzJxWYKXfP9NdAZ7KhuhEy6Oei-oKI5M2rO0lyJlrlSHjLsp-RX9dW_cCM8dbWSjc77cMOFAlIj1ODecTHSl3MBnFGIpSmEtujoB-p_QSjUEpVcGwoTp0GEFXrwu0fEiA&lib=MbNYTTEWip_g6XTlY_LN1kGb-c7rEWU4q'
 	const PX_PER_MINUTE = 2 // 兩小時(120 分) = 240px，高度會是一小時(60 分)的兩倍
 	const HEIGHT_THRESHOLD = 60 // 只有超過 60px 才用時間控制高度
 	const THEAD_HEIGHT = 64 - 4 / 2 // 扣掉線的高度
@@ -76,9 +76,12 @@ const room = Astro.url.searchParams.get('room') ?? 'R0'
 	type Event = {
 		name: string
 		room: string
-		start: string // HH:MM
-		end: string // HH:MM
+		start: number
+		end: number
+		duration: number
 	}
+
+	let events: Event[] = []
 
 	function getNow() {
 		return new Date()
@@ -89,7 +92,7 @@ const room = Astro.url.searchParams.get('room') ?? 'R0'
 		return now.getHours() * 60 + now.getMinutes()
 	}
 
-	function formatTime(t: Date) {
+	function formatTimeWithHour(t: Date) {
 		const formatter = new Intl.DateTimeFormat('zh-TW', {
 			hour: '2-digit',
 			minute: '2-digit',
@@ -97,6 +100,12 @@ const room = Astro.url.searchParams.get('room') ?? 'R0'
 			hour12: false,
 		})
 		return formatter.format(t)
+	}
+
+	function formatTime(t: number) {
+		const hours = String(Math.floor(t / 60)).padStart(2, '0')
+		const minutes = String(t % 60).padStart(2, '0')
+		return `${hours}:${minutes}`
 	}
 
 	function updateClock() {
@@ -116,68 +125,47 @@ const room = Astro.url.searchParams.get('room') ?? 'R0'
 	updateClock()
 	setInterval(updateClock, 1000)
 
-	function parseTimeToMinutes(str: string) {
-		if (!str) return 0
-		const m = String(str)
-			.trim()
-			.match(/^(\d{1,2}):(\d{2})$/)
-		if (!m) return 0
-		const h = parseInt(m[1], 10)
-		const min = parseInt(m[2], 10)
-		return h * 60 + min
-	}
-
-	function renderRundown(events: Event[]) {
+	function renderRundown() {
 		let cumHeight = 0
 
 		$tbody.innerHTML = ''
 
-		const parsed = events
-			.map(ev => {
-				const startMinutes = parseTimeToMinutes(ev.start)
-				const endMinutes = parseTimeToMinutes(ev.end)
-				return {
-					...ev,
-					startMinutes,
-					endMinutes,
-					durationMinutes: Math.max(endMinutes - startMinutes, 1),
-				}
-			})
-			.sort((a, b) => a.startMinutes - b.startMinutes)
-
 		const nowMinutes = getNowMinute()
 		let lineDrawen = false
 
-		parsed.forEach(ev => {
-			const tr = $tbody.insertRow()
+		console.log(events)
+		events
+			.filter(e => e.room == room)
+			.forEach(ev => {
+				const tr = $tbody.insertRow()
 
-			const height = Math.max(ev.durationMinutes * PX_PER_MINUTE, HEIGHT_THRESHOLD)
+				const height = Math.max(ev.duration * PX_PER_MINUTE, HEIGHT_THRESHOLD)
 
-			tr.style.height = `${height}px`
+				tr.style.height = `${height}px`
 
-			if (!lineDrawen && ev.endMinutes >= nowMinutes) {
-				// 畫橫線
-				const offset =
-					(Math.max(nowMinutes - ev.startMinutes, 0) / ev.durationMinutes) * height + cumHeight + THEAD_HEIGHT
-				$line.style.top = `${offset}px`
-				tr.className = 'bg-primary/10'
-				lineDrawen = true
-			}
+				if (!lineDrawen && ev.end >= nowMinutes) {
+					// 畫橫線
+					const offset =
+						(Math.max(nowMinutes - ev.start, 0) / ev.duration) * height + cumHeight + THEAD_HEIGHT
+					$line.style.top = `${offset}px`
+					tr.className = 'bg-primary/10'
+					lineDrawen = true
+				}
 
-			const tdName = tr.insertCell()
-			tdName.textContent = ev.name
-			tdName.className = 'text-left align-top'
+				const tdName = tr.insertCell()
+				tdName.textContent = ev.name
+				tdName.className = 'text-left align-top'
 
-			const tdStart = tr.insertCell()
-			tdStart.textContent = ev.start
-			tdStart.className = 'text-center align-top'
+				const tdStart = tr.insertCell()
+				tdStart.textContent = formatTime(ev.start)
+				tdStart.className = 'text-center align-top'
 
-			const tdEnd = tr.insertCell()
-			tdEnd.textContent = ev.end
-			tdEnd.className = 'text-center align-top'
+				const tdEnd = tr.insertCell()
+				tdEnd.textContent = formatTime(ev.end)
+				tdEnd.className = 'text-center align-top'
 
-			cumHeight += height
-		})
+				cumHeight += height
+			})
 
 		$line.scrollIntoView({
 			block: 'center',
@@ -186,40 +174,35 @@ const room = Astro.url.searchParams.get('room') ?? 'R0'
 	}
 
 	// 假設欄位：A=名稱, B=開始, C=結束, D=地點
-	function parseCsv(csvText: string, room: string): Event[] {
-		const lines = csvText
-			.split(/\r?\n/)
-			.map(l => l.trim())
-			.filter(l => l.length > 0)
-
-		if (lines.length <= 1) return []
-
-		const events: Event[] = []
-
-		for (let i = 1; i < lines.length; i++) {
-			const cols = lines[i].split(',')
-			const [name, start, end, place] = [cols[0] ?? '', cols[1] ?? '', cols[2] ?? '', cols[3] ?? ''].map(c =>
-				c.trim(),
-			)
-
-			if (!name) continue
-			if (room && place && place !== room) continue
-
-			events.push({ name, start, end, room: place })
-		}
-
-		return events
+	function parseTime(t: Date) {
+		const time = new Date(t)
+		return time.getHours() * 60 + time.getMinutes()
 	}
 
 	async function fetchRundown() {
 		try {
-			const res = await fetch(`${SHEETURL}&t=${Date.now()}`) // t= to prevent google server cache
+			const res = await fetch(`${APIURL}&t=${Date.now()}`) // t= to prevent google server cache
 			if (!res.ok) throw new Error('HTTP ' + res.status)
-			const csv = await res.text()
-			const events = parseCsv(csv, room)
+
+			const data = (await res.json()) as any[]
+			events = data
+				.map(item => {
+					const start = new Date(item['開始'])
+					const end = new Date(item['結束'])
+
+					return {
+						name: item['名稱'],
+						room: item['地點'],
+						start: parseTime(start),
+						end: parseTime(end),
+						duration: parseTime(end) - parseTime(start),
+					} as Event
+				})
+				.sort((a, b) => a.start - b.start)
+
 			console.log(events)
-			renderRundown(events)
-			$updatedAt.textContent = `最後更新：${formatTime(getNow())}（按一下提前更新）`
+			renderRundown()
+			$updatedAt.textContent = `最後更新：${formatTimeWithHour(getNow())}（按一下提前更新）`
 		} catch (err) {
 			console.error('fetch rundown error', err)
 			$updatedAt.textContent = '讀取失敗（按一下提前更新）'
@@ -229,10 +212,11 @@ const room = Astro.url.searchParams.get('room') ?? 'R0'
 	function setRoom() {
 		room = $room.value
 		history.replaceState(null, '', `?room=${room}`)
-		fetchRundown()
+		renderRundown()
 	}
 
 	$room.addEventListener('change', setRoom)
+	fetchRundown()
 	setRoom()
 	setInterval(fetchRundown, 30 * 1000)
 	$updatedAt.addEventListener('click', fetchRundown)
