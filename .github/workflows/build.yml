@@ -49,10 +49,9 @@ jobs:
         run: pnpm install
         working-directory: ${{ env.BUILD_PATH }}
 
-      - name: Build with Astro
-        run: |
-          pnpm npm run build \
-            --base "${{ steps.pages.outputs.base_path }}"
+      - name: Build
+        run: pnpm run build \
+          --base "${{ steps.pages.outputs.base_path }}"
         working-directory: ${{ env.BUILD_PATH }}
 
       - name: Upload artifact
