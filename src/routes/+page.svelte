@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { getEditContext } from '$lib/context';
-	import { supabase } from '$lib/supabase';
+	import { supabase, table } from '$lib/supabase';
+	import { errorToast } from '$lib/toast';
 	import { onMount } from 'svelte';
 	import type { ChangeEventHandler } from 'svelte/elements';
 
@@ -14,16 +15,15 @@
 	};
 
 	let now = $state(new Date());
-	// let now = $state(new Date(2025, 11, 23, 10, 40, 0))
 	let events = $state<Entry[]>([]);
 	let room = $state('R0');
 	let eventsInRoom = $derived(
-		events.filter((e) => e.room == room).sort((a, b) => a.start - b.start)
+		events.filter((e) => e.room == room).sort((a, b) => a.start - b.start),
 	);
 	let editing = $state<{ id: number; field: keyof Entry } | null>(null);
 	let top = $derived(nowTop());
 	let nowStr = $derived(
-		`${pad2(now.getHours())}:${pad2(now.getMinutes())}:${pad2(now.getSeconds())}`
+		`${pad2(now.getHours())}:${pad2(now.getMinutes())}:${pad2(now.getSeconds())}`,
 	);
 	const edit = getEditContext();
 
@@ -72,12 +72,13 @@
 			console.log({ id, field, value });
 
 			supabase
-				.from('event')
+				.from(table.entry)
 				.update({ [field]: value })
 				.eq('id', id)
 				.then(({ error }) => {
 					if (error) {
 						console.error('Error updating event:', error);
+						errorToast(error.message);
 					}
 					editing = null;
 				});
@@ -88,12 +89,13 @@
 		return () => {
 			console.log(`remove ${id}`);
 			supabase
-				.from('event')
+				.from(table.entry)
 				.delete()
 				.eq('id', id)
 				.then(({ error }) => {
 					if (error) {
 						console.error('Error deleting event:', error);
+						errorToast(error.message);
 					}
 				});
 		};
@@ -107,18 +109,20 @@
 		console.log(data);
 
 		supabase
-			.from('event')
+			.from(table.entry)
 			.insert([
 				{
 					name: data.name as string,
 					room: room,
 					start: data.start as string,
-					end: data.end as string
-				}
+					end: data.end as string,
+					team_id: 'a5a6320c-940a-43ea-a33f-7ee31867f78a',
+				},
 			])
 			.then(({ error }) => {
 				if (error) {
 					console.error('Error creating event:', error);
+					errorToast(error.message);
 				}
 
 				console.log(e);
@@ -127,11 +131,12 @@
 	}
 
 	supabase
-		.from('event')
+		.from(table.entry)
 		.select('*')
 		.then(({ data, error }) => {
 			if (error) {
 				console.error('Error fetching event data:', error);
+				errorToast(error.message);
 			}
 
 			if (!data) {
@@ -139,13 +144,15 @@
 				return;
 			}
 
+			console.log(data);
+
 			events = data.map((e) => ({
 				id: e.id,
 				name: e.name,
 				room: e.room,
 				start: timeToMinutes(e.start),
 				end: timeToMinutes(e.end),
-				duration: timeToMinutes(e.end) - timeToMinutes(e.start)
+				duration: timeToMinutes(e.end) - timeToMinutes(e.start),
 			}));
 		});
 
@@ -155,7 +162,7 @@
 		}, 1000);
 		const channel = supabase
 			.channel('custom-all-channel')
-			.on('postgres_changes', { event: '*', schema: 'public', table: 'event' }, (payload) => {
+			.on('postgres_changes', { event: '*', schema: 'public', table: table.entry }, (payload) => {
 				console.log('Change received!', payload);
 				switch (payload.eventType) {
 					case 'INSERT': {
@@ -168,8 +175,8 @@
 								room: e.room,
 								start: timeToMinutes(e.start),
 								end: timeToMinutes(e.end),
-								duration: timeToMinutes(e.end) - timeToMinutes(e.start)
-							}
+								duration: timeToMinutes(e.end) - timeToMinutes(e.start),
+							},
 						].sort((a, b) => a.start - b.start);
 						break;
 					}
@@ -184,9 +191,9 @@
 											room: e.room,
 											start: timeToMinutes(e.start),
 											end: timeToMinutes(e.end),
-											duration: timeToMinutes(e.end) - timeToMinutes(e.start)
+											duration: timeToMinutes(e.end) - timeToMinutes(e.start),
 										}
-									: ev
+									: ev,
 							)
 							.sort((a, b) => a.start - b.start);
 						break;
@@ -217,6 +224,25 @@
 	<option value="S">S</option>
 </select>
 
+{#snippet editableText(e: Entry, field: keyof Entry)}
+	{#if edit.checked && editing?.id === e.id && editing?.field === field}
+		<input
+			type={typeof e[field] == 'number' ? 'time' : 'text'}
+			class="input input-bordered"
+			value={e[field]}
+			onchange={editEntry(e.id, field)}
+			onblur={() => (editing = null)}
+		/>
+	{:else}
+		<span
+			class="cursor-pointer"
+			ondblclick={() => (editing = { id: e.id, field })}
+			role="button"
+			tabindex="0">{typeof e[field] == 'number' ? minutesToTime(e[field]) : e[field]}</span
+		>
+	{/if}
+{/snippet}
+
 <form class="relative grow overflow-x-scroll" onsubmit={createEntry}>
 	<table class="table-pin-rows table">
 		<thead>
@@ -234,60 +260,9 @@
 		<tbody>
 			{#each eventsInRoom as e}
 				<tr style="height: {durationToHeight(e.duration)}px">
-					<td>
-						{#if edit.checked && editing?.id === e.id && editing?.field === 'name'}
-							<input
-								type="text"
-								class="input input-bordered"
-								value={e.name}
-								onchange={editEntry(e.id, 'name')}
-								onblur={() => (editing = null)}
-							/>
-						{:else}
-							<span
-								class="cursor-pointer"
-								ondblclick={() => (editing = { id: e.id, field: 'name' })}
-								role="button"
-								tabindex="0">{e.name}</span
-							>
-						{/if}
-					</td>
-					<td>
-						{#if edit.checked && editing?.id === e.id && editing?.field === 'start'}
-							<input
-								type="time"
-								class="input input-bordered"
-								value={minutesToTime(e.start)}
-								onchange={editEntry(e.id, 'start')}
-								onblur={() => (editing = null)}
-							/>
-						{:else}
-							<span
-								class="cursor-pointer"
-								ondblclick={() => (editing = { id: e.id, field: 'start' })}
-								role="button"
-								tabindex="0">{minutesToTime(e.start)}</span
-							>
-						{/if}
-					</td>
-					<td>
-						{#if edit.checked && editing?.id === e.id && editing?.field === 'end'}
-							<input
-								type="time"
-								class="input input-bordered"
-								value={minutesToTime(e.end)}
-								onchange={editEntry(e.id, 'end')}
-								onblur={() => (editing = null)}
-							/>
-						{:else}
-							<span
-								class="cursor-pointer"
-								ondblclick={() => (editing = { id: e.id, field: 'end' })}
-								role="button"
-								tabindex="0">{minutesToTime(e.end)}</span
-							>
-						{/if}
-					</td>
+					<td>{@render editableText(e, 'name')}</td>
+					<td>{@render editableText(e, 'start')}</td>
+					<td>{@render editableText(e, 'end')}</td>
 					<td>{minutesToTime(e.duration)}</td>
 					{#if edit.checked}
 						<td
@@ -319,7 +294,7 @@
 	</table>
 
 	<div
-		class="bg-primary shadow-primary/60 pointer-events-none absolute right-0 left-0 h-1 shadow-md"
+		class="bg-primary/30 shadow-primary/60 pointer-events-none absolute right-0 left-0 h-1 shadow-md"
 		style="top: {top}px"
 	></div>
 </form>
