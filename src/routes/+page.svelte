@@ -123,6 +123,7 @@
 				if (error) {
 					console.error('Error creating event:', error);
 					errorToast(error.message);
+					return
 				}
 
 				console.log(e);
@@ -137,6 +138,7 @@
 			if (error) {
 				console.error('Error fetching event data:', error);
 				errorToast(error.message);
+				return
 			}
 
 			if (!data) {
