@@ -1,4 +1,4 @@
-import pocketbase from 'pocketbase';
+import pocketbase, { type OnStoreChangeFunc } from 'pocketbase';
 import {
 	Collections,
 	type ActivityResponse,
@@ -37,6 +37,10 @@ export function Logout() {
 
 export function IsLogined() {
 	return pb.authStore.isValid;
+}
+
+export function OnAuthChange(cb: OnStoreChangeFunc) {
+	pb.authStore.onChange(cb);
 }
 
 export const ErrUnauthroized = new Error('Unauthorized');
