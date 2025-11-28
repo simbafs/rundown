@@ -40,7 +40,11 @@ export function IsLogined() {
 }
 
 export function OnAuthChange(cb: OnStoreChangeFunc) {
-	pb.authStore.onChange(cb);
+	pb.authStore.onChange(cb, true);
+}
+
+export function GetCurrentUID() {
+	return pb.authStore.record?.id || '';
 }
 
 export const ErrUnauthroized = new Error('Unauthorized');
@@ -117,6 +121,16 @@ export async function TransferOwnership(aid: string, uid: string) {
 			expand: 'owner,member',
 		},
 	);
+}
+
+export async function CanEdit(aid: string, uid: string) {
+	if (!IsLogined()) return false;
+
+	return pb
+		.collection(Collections.Activity)
+		.getOne<ActivityResponse>(aid)
+		.then((activity) => activity.owner === uid || activity.member.includes(uid))
+		.catch(() => false);
 }
 
 ///////////

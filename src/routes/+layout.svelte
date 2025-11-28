@@ -7,13 +7,17 @@
 	let logined = $state(false);
 
 	import { SvelteToast } from '@zerodevx/svelte-toast';
-	import { IsLogined, Logout, OnAuthChange } from '$lib/rundown';
+	import { GetCurrentUID, IsLogined, Logout, OnAuthChange } from '$lib/rundown';
+	import { user } from '$lib/auth.svelte';
 
 	// Optionally set default options here
 	const options = {};
 
 	OnAuthChange(() => {
 		logined = IsLogined();
+		if (logined) {
+			user.uid = GetCurrentUID();
+		}
 	});
 </script>
 
@@ -35,7 +39,7 @@
 		</span>
 	</div>
 
-	<div class="flex grow flex-col items-center gap-4 py-8">
+	<div class="flex min-w-5/6 grow flex-col items-center gap-4 py-8">
 		{@render children()}
 	</div>
 </div>

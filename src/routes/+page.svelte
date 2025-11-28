@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { DeleteEvent, ListEvent } from '$lib/rundown';
+	import { user } from '$lib/auth.svelte';
+	import { CanEdit, DeleteEvent, ListEvent } from '$lib/rundown';
 	import { type EventRecord } from '$lib/rundown/pocketbase';
 	import type { ChangeEventHandler } from 'svelte/elements';
 
@@ -33,7 +34,22 @@
 	}
 </script>
 
-<h1 class="w-full text-center text-4xl font-bold">{nowStr}</h1>
+<div class="navbar w-full">
+	<div class="navbar-start"></div>
+	<div class="navbar-center">
+		<h1 class="text-4xl font-bold">{nowStr}</h1>
+	</div>
+	<div class="navbar-end">
+		{#await CanEdit(activity, user.uid) then canEdit}
+			{#if canEdit}
+				<label class="label">
+					<input type="checkbox" class="toggle toggle-primary" bind:checked={edit} />
+					編輯
+				</label>
+			{/if}
+		{/await}
+	</div>
+</div>
 
 {#snippet editableText(e: EventRecord, field: keyof EventRecord)}
 	<!-- {#if edit && editing?.id === e.id && editing?.field === field} -->
@@ -66,6 +82,7 @@
 {#await ListEvent(activity)}
 	<p>Loading events...</p>
 {:then events}
+	<!-- TODO: overflow in x  -->
 	<table class="table-pin-rows table-lg table">
 		<thead>
 			<tr class="h-16">
