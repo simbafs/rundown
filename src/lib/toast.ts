@@ -1,6 +1,7 @@
 import { toast } from '@zerodevx/svelte-toast';
 
 export function infoToast(msg: string) {
+	console.log(msg);
 	toast.push(msg, {
 		theme: {
 			'--toastBackground': '#2196F3',
