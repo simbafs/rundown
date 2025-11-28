@@ -11,6 +11,7 @@ export function infoToast(msg: string) {
 }
 
 export function errorToast(msg: string) {
+	console.error(msg);
 	toast.push(msg, {
 		theme: {
 			'--toastBackground': '#f44336',

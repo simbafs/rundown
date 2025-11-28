@@ -98,7 +98,7 @@
 	});
 </script>
 
-<h1 class="card-title mb-6 justify-center text-2xl">🔐 登入</h1>
+<h1 class="card-title mb-6 justify-center text-2xl">登入</h1>
 
 <label class="label">
 	<input type="checkbox" class="toggle toggle-primary" bind:checked={emailSent} />
@@ -109,12 +109,7 @@
 	{/if}
 </label>
 
-{#if loading}
-	<div class="flex items-center justify-center">
-		<span class="loading loading-spinner loading-lg text-primary"></span>
-		<p class="ml-4">驗證中，請稍候...</p>
-	</div>
-{:else if emailSent}
+{#if emailSent}
 	<p class="mb-4 text-center text-sm">
 		請檢查您的信箱 (包含垃圾郵件匣)，點擊連結進行登入，或手動輸入下方代碼。
 	</p>
