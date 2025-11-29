@@ -82,44 +82,45 @@
 {#await ListEvent(activity)}
 	<p>Loading events...</p>
 {:then events}
-	<!-- TODO: overflow in x  -->
-	<table class="table-pin-rows table-lg table">
-		<thead>
-			<tr class="h-16">
-				<th>開始</th>
-				<th>結束</th>
-				<th>名稱</th>
-				<th>講者</th>
-				<th>備註</th>
-				<th>切換字卡</th>
-				{#if edit}
-					<th></th>
-				{/if}
-			</tr>
-		</thead>
-
-		<tbody>
-			{#each events as e}
-				<tr>
-					<td>{@render editableText(e, 'start')}</td>
-					<td>{@render editableText(e, 'end')}</td>
-					<td>{@render editableText(e, 'name')}</td>
-					<td>{@render editableText(e, 'speaker')}</td>
-					<td>{@render editableText(e, 'note')}</td>
-					<td>{@render editableText(e, 'info_card')}</td>
+	<div class="w-full max-w-full overflow-x-scroll">
+		<table class="table-pin-rows table-lg table min-w-max">
+			<thead>
+				<tr class="h-16">
+					<th>開始</th>
+					<th>結束</th>
+					<th>名稱</th>
+					<th>講者</th>
+					<th>備註</th>
+					<th>切換字卡</th>
 					{#if edit}
-						<td
-							><button
-								type="button"
-								class="btn btn-error btn-soft"
-								onclick={() => DeleteEvent(e.id)}>Remove</button
-							></td
-						>
+						<th></th>
 					{/if}
 				</tr>
-			{/each}
-		</tbody>
-	</table>
+			</thead>
+
+			<tbody>
+				{#each events as e}
+					<tr>
+						<td>{@render editableText(e, 'start')}</td>
+						<td>{@render editableText(e, 'end')}</td>
+						<td>{@render editableText(e, 'name')}</td>
+						<td>{@render editableText(e, 'speaker')}</td>
+						<td>{@render editableText(e, 'note')}</td>
+						<td>{@render editableText(e, 'info_card')}</td>
+						{#if edit}
+							<td
+								><button
+									type="button"
+									class="btn btn-error btn-soft"
+									onclick={() => DeleteEvent(e.id)}>Remove</button
+								></td
+							>
+						{/if}
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	</div>
 {:catch err}
 	<p class="text-error">{err}</p>
 {/await}

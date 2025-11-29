@@ -25,7 +25,7 @@
 	<link rel="icon" href={favicon} />
 </svelte:head>
 
-<div class="mx-auto flex h-screen w-screen flex-col items-center pb-8">
+<div class="mx-auto flex min-h-screen max-w-screen flex-col items-center overflow-x-hidden pb-8">
 	<div class="navbar bg-base-100 sticky top-0 shadow-sm">
 		<span class="navbar-start">
 			<a href="/" class="btn btn-ghost btn-lg">Rundown</a>
@@ -39,7 +39,7 @@
 		</span>
 	</div>
 
-	<div class="flex min-w-5/6 grow flex-col items-center gap-4 py-8">
+	<div class="flex w-full max-w-4xl grow flex-col items-center gap-4 p-8">
 		{@render children()}
 	</div>
 </div>
