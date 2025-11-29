@@ -73,7 +73,9 @@
 		>{typeof e[field] == 'number'
 			? minutesToTime(e[field])
 			: typeof e[field] == 'boolean'
-				? e[field] && '✅'
+				? e[field]
+					? '✅'
+					: ''
 				: e[field]}</button
 	>
 	<!-- {/if} -->
