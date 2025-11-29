@@ -1,20 +1,38 @@
 <script lang="ts">
 	import { user } from '$lib/auth.svelte';
-	import { CanEdit, DeleteEvent, ListEvent } from '$lib/rundown';
+	import {
+		CanEdit,
+		DeleteEvent,
+		EventProgress,
+		IsEventDone,
+		IsEventOngoing,
+		IsEventReady,
+		IsEventTimeout,
+		ListEvent,
+	} from '$lib/rundown';
 	import { type EventRecord } from '$lib/rundown/pocketbase';
 	import type { ChangeEventHandler } from 'svelte/elements';
 
 	let activity = $state('85s7azpy7mmaur9'); // SITCON 2026 R0
-	let now = $state(new Date());
-	$effect(() => {
-		const interval = setInterval(() => {
-			now = new Date();
-		}, 1000);
-		return () => clearInterval(interval);
+
+	// NOTE: temperary allow manually time control
+	let n = $state('09:38');
+	let now = $derived.by(() => {
+		const [hours, minutes] = n.split(':').map(Number);
+		const date = new Date();
+		date.setHours(hours, minutes, 0, 0);
+		return date;
 	});
-	const nowStr = $derived(
-		`${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`,
-	);
+	// let now = $state(new Date());
+	// $effect(() => {
+	// 	const interval = setInterval(() => {
+	// 		now = new Date();
+	// 	}, 1000);
+	// 	return () => clearInterval(interval);
+	// });
+	// const nowStr = $derived(
+	// 	`${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`,
+	// );
 
 	let edit = $state(false);
 	let editing = $state<{ id: string; field: string } | null>(null);
@@ -37,7 +55,9 @@
 <div class="navbar w-full">
 	<div class="navbar-start"></div>
 	<div class="navbar-center">
-		<h1 class="text-4xl font-bold">{nowStr}</h1>
+		<!-- <h1 class="text-4xl font-bold">{nowStr}</h1> -->
+		<input class="input input-ghost text-4xl" type="time" bind:value={n} />
+		{@debug now}
 	</div>
 	<div class="navbar-end">
 		{#await CanEdit(activity, user.uid) then canEdit}
@@ -102,8 +122,24 @@
 
 			<tbody>
 				{#each events as e}
-					<tr>
-						<td>{@render editableText(e, 'start')}</td>
+					<tr
+						class={[
+							{
+								'bg-yellow-200': IsEventReady(e, now),
+								'bg-green-200/50': IsEventOngoing(e, now), // allow underlay progress bar to be seen
+								'bg-sky-200': IsEventDone(e, now),
+								'bg-rose-200': IsEventTimeout(e, now),
+							},
+							'relative',
+						]}
+					>
+						<td
+							>{@render editableText(e, 'start')}
+							<div
+								class="absolute top-0 left-0 -z-10 h-full bg-green-600/30"
+								style="width: {EventProgress(e, now) * 100}%"
+							></div>
+						</td>
 						<td>{@render editableText(e, 'end')}</td>
 						<td>{@render editableText(e, 'name')}</td>
 						<td>{@render editableText(e, 'speaker')}</td>

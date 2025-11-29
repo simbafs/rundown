@@ -181,3 +181,52 @@ export async function GetCurrentEvent(aid: string, now = new Date()) {
 				.getFirstListItem<EventResponse>(`activity = "${aid}"`, { sort: '+start' }),
 		);
 }
+
+// IsEventReady returns true if the event is going to begin in 5 minutes
+export function IsEventReady(e: EventRecord, now = new Date()) {
+	const nowMinutes = timeToMinutes(now);
+	const start = e.start || 0;
+
+	return start - nowMinutes <= 5 && start - nowMinutes > 0;
+}
+
+// IsEventOngoing returns true if the event is ongoing
+export function IsEventOngoing(e: EventRecord, now = new Date()) {
+	const nowMinutes = timeToMinutes(now);
+	const start = e.start || 0;
+	const end = e.end || 0;
+
+	return nowMinutes >= start && nowMinutes < end;
+}
+
+// IsEventDone returns true if the event is marked as done or the end time has passed
+export function IsEventDone(e: EventRecord, now = new Date()) {
+	const nowMinutes = timeToMinutes(now);
+	const end = e.end || 0;
+
+	return e.done === true && nowMinutes >= end;
+}
+
+// IsEventTimeout returns true if the event is not marked as done and the end time has passed
+export function IsEventTimeout(e: EventRecord, now = new Date()) {
+	const nowMinutes = timeToMinutes(now);
+	const end = e.end || 0;
+
+	return e.done !== true && nowMinutes >= end;
+}
+
+export function EventProgress(e: EventRecord, now = new Date()) {
+	if (IsEventDone(e, now) || IsEventTimeout(e, now)) {
+		return 1;
+	}
+
+	if (!IsEventOngoing(e, now)) {
+		return 0;
+	}
+
+	const nowMinutes = timeToMinutes(now);
+	const start = e.start || 0;
+	const end = e.end || 0;
+
+	return (nowMinutes - start) / (end - start);
+}
