@@ -8,9 +8,10 @@
 		IsEventOngoing,
 		IsEventReady,
 		IsEventTimeout,
-		ListEvent,
+		ListAndSubscribeEvent,
 	} from '$lib/rundown';
 	import { type EventRecord } from '$lib/rundown/pocketbase';
+	import { errorToast } from '$lib/toast';
 	import type { ChangeEventHandler } from 'svelte/elements';
 
 	let activity = $state('85s7azpy7mmaur9'); // SITCON 2026 R0
@@ -33,6 +34,19 @@
 	// const nowStr = $derived(
 	// 	`${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`,
 	// );
+
+	let events = $state<EventRecord[] | null>(null);
+	$effect(() => {
+		const unsub = ListAndSubscribeEvent(activity, (e) => {
+			events = e;
+		}).catch((err) => {
+			errorToast(`Failed to load events: ${err.message}`);
+		});
+
+		return () => {
+			unsub.then((u) => u?.()).then(console.log, console.error);
+		};
+	});
 
 	let edit = $state(false);
 	let editing = $state<{ id: string; field: string } | null>(null);
@@ -101,9 +115,9 @@
 	<!-- {/if} -->
 {/snippet}
 
-{#await ListEvent(activity)}
+{#if events === null}
 	<p>Loading events...</p>
-{:then events}
+{:else}
 	<div class="w-full max-w-full overflow-x-scroll">
 		<table class="table-pin-rows table-lg table min-w-max">
 			<thead>
@@ -159,6 +173,4 @@
 			</tbody>
 		</table>
 	</div>
-{:catch err}
-	<p class="text-error">{err}</p>
-{/await}
+{/if}

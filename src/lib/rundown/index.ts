@@ -144,6 +144,63 @@ export async function ListEvent(aid: string) {
 	});
 }
 
+export async function ListAndSubscribeEvent(aid: string, cb: (events: EventRecord[]) => void) {
+	if (!IsLogined()) throw ErrUnauthroized;
+
+	let events = await ListEvent(aid);
+	cb(events);
+	let ids = new Set(events.map((e) => e.id));
+
+	return pb.collection(Collections.Event).subscribe('*', (e) => {
+		let updated = false;
+		const id = e.record.id;
+		console.log(e.action, e.record);
+
+		switch (e.action) {
+			case 'create':
+				if (e.record.activity != aid) break;
+				events = [...events, e.record];
+				ids.add(id);
+				updated = true;
+				console.log('create');
+				break;
+			case 'update':
+				console.log([...ids]);
+				if (e.record.activity == aid) {
+					if (ids.has(id)) {
+						// update existing
+						events = events.map((ev) => (ev.id === id ? e.record : ev));
+						console.log('update');
+					} else {
+						// new record for this activity
+						events = [...events, e.record];
+						ids.add(id);
+						console.log('add to activity');
+					}
+					updated = true;
+				} else if (ids.has(id)) {
+					// removed from this activity
+					events = events.filter((ev) => ev.id !== id);
+					ids.delete(id);
+					updated = true;
+					console.log('delete from activity');
+				}
+				break;
+			case 'delete':
+				if (e.record.activity != aid) break;
+				events = events.filter((ev) => ev.id !== id);
+				ids.delete(id);
+				updated = true;
+				console.log('delete');
+				break;
+		}
+		if (updated) {
+			events = events.sort((a, b) => (a.start || 0) - (b.start || 0));
+			cb(events);
+		}
+	});
+}
+
 export async function CreateEvent(aid: string, data: Partial<EventRecord>) {
 	if (!IsLogined()) throw ErrUnauthroized;
 
