@@ -86,7 +86,8 @@
 	<table class="table-pin-rows table-lg table">
 		<thead>
 			<tr class="h-16">
-				<th>時間</th>
+				<th>開始</th>
+				<th>結束</th>
 				<th>名稱</th>
 				<th>講者</th>
 				<th>備註</th>
@@ -100,7 +101,8 @@
 		<tbody>
 			{#each events as e}
 				<tr>
-					<td>{@render editableText(e, 'time')}</td>
+					<td>{@render editableText(e, 'start')}</td>
+					<td>{@render editableText(e, 'end')}</td>
 					<td>{@render editableText(e, 'name')}</td>
 					<td>{@render editableText(e, 'speaker')}</td>
 					<td>{@render editableText(e, 'note')}</td>

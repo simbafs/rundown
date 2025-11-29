@@ -106,12 +106,14 @@ export type ActivityRecord = {
 export type EventRecord = {
 	activity: RecordIdString
 	created: IsoAutoDateString
+	done?: boolean
+	end?: number
 	id: string
 	info_card?: boolean
 	name: string
 	note?: string
 	speaker?: string
-	time: string
+	start?: number
 	updated: IsoAutoDateString
 }
 

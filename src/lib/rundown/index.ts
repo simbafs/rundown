@@ -140,7 +140,7 @@ export async function CanEdit(aid: string, uid: string) {
 export async function ListEvent(aid: string) {
 	return pb.collection(Collections.Event).getFullList<EventResponse>({
 		filter: `activity = "${aid}"`,
-		sort: '+time',
+		sort: '+start',
 	});
 }
 
@@ -167,16 +167,17 @@ function timeToMinutes(time: Date) {
 }
 
 export async function GetCurrentEvent(aid: string, now = new Date()) {
+	// TODO: this function need to be updated
 	const nowMinutes = timeToMinutes(now);
 
 	return pb
 		.collection(Collections.Event)
-		.getFirstListItem<EventResponse>(`time < ${nowMinutes} && activit = "${aid}"`, {
-			sort: '-time',
+		.getFirstListItem<EventResponse>(`start < ${nowMinutes} && activit = "${aid}"`, {
+			sort: '-start',
 		})
 		.catch(() =>
 			pb
 				.collection(Collections.Event)
-				.getFirstListItem<EventResponse>(`activity = "${aid}"`, { sort: '+time' }),
+				.getFirstListItem<EventResponse>(`activity = "${aid}"`, { sort: '+start' }),
 		);
 }
