@@ -10,6 +10,7 @@
 		IsEventReady,
 		IsEventTimeout,
 		ListAndSubscribeEvent,
+		UpdateEvent,
 	} from '$lib/rundown';
 	import { type EventRecord } from '$lib/rundown/pocketbase';
 	import { errorToast } from '$lib/toast';
@@ -50,11 +51,24 @@
 	});
 
 	let edit = $state(true);
-	let editing = $state<{ id: string; field: string } | null>(null);
 
-	function editEvent(eid: string, field: keyof EventRecord): ChangeEventHandler<HTMLInputElement> {
+	function editEvent(
+		eid: string,
+		field: keyof EventRecord,
+	): ChangeEventHandler<HTMLInputElement | HTMLTextAreaElement> {
 		return (e) => {
-			console.log(`Edit event ${eid} field ${field} to ${e.currentTarget.value}`);
+			let value: string | number | boolean;
+			if (field === 'info_card') {
+				value = (e.target as HTMLInputElement).checked;
+			} else if (field === 'start' || field === 'end') {
+				value = timeStrToMinutes((e.target as HTMLInputElement).value);
+			} else {
+				value = (e.target as HTMLInputElement | HTMLTextAreaElement).value;
+			}
+
+			UpdateEvent(eid, { [field]: value }).catch((err) => {
+				errorToast(`Failed to update event: ${err.message}`);
+			});
 		};
 	}
 
@@ -66,6 +80,11 @@
 		return `${hours}:${minutes}`;
 	}
 
+	function timeStrToMinutes(t: string) {
+		const [hours, minutes] = t.split(':').map(Number);
+		return hours * 60 + minutes;
+	}
+
 	let newStart = $state('');
 	let newEnd = $state('');
 	let newName = $state('');
@@ -75,13 +94,6 @@
 
 	function createEvent(e: SubmitEvent) {
 		e.preventDefault();
-
-		function timeStrToMinutes(t: string) {
-			const [hours, minutes] = t.split(':').map(Number);
-			return hours * 60 + minutes;
-		}
-
-		console.log({ newStart, newEnd, newName, newSpeaker, newNote, newInfoCard });
 
 		CreateEvent(activity, {
 			start: timeStrToMinutes(newStart),
@@ -99,7 +111,6 @@
 	<div class="navbar-center">
 		<!-- <h1 class="text-4xl font-bold">{nowStr}</h1> -->
 		<input class="input input-ghost text-4xl" type="time" bind:value={n} />
-		{@debug now}
 	</div>
 	<div class="navbar-end">
 		{#await CanEdit(activity, user.uid) then canEdit}
@@ -114,33 +125,48 @@
 </div>
 
 {#snippet editableText(e: EventRecord, field: keyof EventRecord)}
-	<!-- {#if edit && editing?.id === e.id && editing?.field === field} -->
-	<!-- 	<input -->
-	<!-- 		type={inputType} -->
-	<!-- 		class={{ -->
-	<!-- 			'input input-bordered': inputType != 'checkbox', -->
-	<!-- 			toggle: inputType == 'checkbox', -->
-	<!-- 		}} -->
-	<!-- 		value={e[field]} -->
-	<!-- 		onchange={editEvent(e.id, field)} -->
-	<!-- 		onblur={() => (editing = null)} -->
-	<!-- 	/> -->
-	<!-- {:else} -->
-	<button
-		type="button"
-		class="cursor-pointer"
-		onclick={() => console.log(e.id, field)}
-		ondblclick={() => (editing = { id: e.id, field })}
-		tabindex="0"
-		>{typeof e[field] == 'number'
-			? minutesToTime(e[field])
-			: typeof e[field] == 'boolean'
-				? e[field]
-					? '✅'
-					: ''
-				: e[field]}</button
-	>
-	<!-- {/if} -->
+	{#if edit}
+		{#if field === 'info_card'}
+			<label class="swap swap-flip">
+				<!-- this hidden checkbox controls the state -->
+				<input type="checkbox" onchange={editEvent(e.id, field)} defaultchecked={e[field]} />
+
+				<div class="swap-on">✅</div>
+				<div class="swap-off">❌</div>
+			</label>
+		{:else if field == 'note'}
+			<textarea
+				class="input input-bordered"
+				placeholder="備註"
+				onchange={editEvent(e.id, field)}
+				defaultvalue={e[field]}
+			></textarea>
+		{:else if typeof e[field] == 'number'}
+			<input
+				type="time"
+				class="input input-bordered w-32"
+				defaultvalue={minutesToTime(e[field])}
+				onchange={editEvent(e.id, field)}
+			/>
+		{:else}
+			<input
+				type="text"
+				class="input input-bordered w-32"
+				defaultvalue={e[field]}
+				onchange={editEvent(e.id, field)}
+			/>
+		{/if}
+	{:else}
+		<span
+			>{typeof e[field] == 'number'
+				? minutesToTime(e[field])
+				: typeof e[field] == 'boolean'
+					? e[field]
+						? '✅'
+						: ''
+					: e[field]}</span
+		>
+	{/if}
 {/snippet}
 
 {#if events === null}
@@ -215,7 +241,7 @@
 							</label>
 						</td>
 						<td>
-							<label class="floating-label max-w-32">
+							<label class="floating-label w-32">
 								<span>名稱</span>
 								<input
 									type="text"
@@ -227,7 +253,7 @@
 							</label>
 						</td>
 						<td>
-							<label class="floating-label max-w-32">
+							<label class="floating-label w-32">
 								<span>講者</span>
 								<input
 									type="text"

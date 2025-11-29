@@ -154,7 +154,6 @@ export async function ListAndSubscribeEvent(aid: string, cb: (events: EventRecor
 	return pb.collection(Collections.Event).subscribe('*', (e) => {
 		let updated = false;
 		const id = e.record.id;
-		console.log(e.action, e.record);
 
 		switch (e.action) {
 			case 'create':
@@ -162,20 +161,16 @@ export async function ListAndSubscribeEvent(aid: string, cb: (events: EventRecor
 				events = [...events, e.record];
 				ids.add(id);
 				updated = true;
-				console.log('create');
 				break;
 			case 'update':
-				console.log([...ids]);
 				if (e.record.activity == aid) {
 					if (ids.has(id)) {
 						// update existing
 						events = events.map((ev) => (ev.id === id ? e.record : ev));
-						console.log('update');
 					} else {
 						// new record for this activity
 						events = [...events, e.record];
 						ids.add(id);
-						console.log('add to activity');
 					}
 					updated = true;
 				} else if (ids.has(id)) {
@@ -183,7 +178,6 @@ export async function ListAndSubscribeEvent(aid: string, cb: (events: EventRecor
 					events = events.filter((ev) => ev.id !== id);
 					ids.delete(id);
 					updated = true;
-					console.log('delete from activity');
 				}
 				break;
 			case 'delete':
@@ -191,7 +185,6 @@ export async function ListAndSubscribeEvent(aid: string, cb: (events: EventRecor
 				events = events.filter((ev) => ev.id !== id);
 				ids.delete(id);
 				updated = true;
-				console.log('delete');
 				break;
 		}
 		if (updated) {
