@@ -50,7 +50,7 @@
 		};
 	});
 
-	let edit = $state(true);
+	let edit = $state(false);
 
 	function editEvent(
 		eid: string,
@@ -200,8 +200,18 @@
 								'bg-sky-200': IsEventDone(e, now),
 								'bg-rose-200': IsEventTimeout(e, now),
 							},
+							{
+								'cursor-pointer hover:bg-rose-300 active:bg-rose-400':
+									IsEventTimeout(e, now) && !edit,
+							},
 							'relative',
 						]}
+						onclick={() => {
+							if (edit || !IsEventTimeout(e, now)) return;
+							UpdateEvent(e.id, { done: true }).catch((err) => {
+								errorToast(`Failed to update event: ${err.message}`);
+							});
+						}}
 					>
 						<td
 							>{@render editableText(e, 'start')}
