@@ -39,7 +39,7 @@
 		</span>
 	</div>
 
-	<div class="flex w-full max-w-4xl grow flex-col items-center gap-4 p-8">
+	<div class="flex w-full grow flex-col items-center gap-4 p-8">
 		{@render children()}
 	</div>
 </div>
