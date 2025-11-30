@@ -174,11 +174,24 @@
 	<p>Loading events...</p>
 {:else}
 	<form class="w-full max-w-full overflow-x-scroll" onsubmit={createEvent}>
-		<table class="table-pin-rows table-lg table min-w-max">
+		<table class="table-pin-rows table-lg table min-w-max [&_td,th]:p-1">
+			<colgroup>
+				<col class="w-10" />
+				<col class="w-10" />
+				<col class="w-10" />
+				<col />
+				<col />
+				<col />
+				<col />
+				{#if edit}
+					<col />
+				{/if}
+			</colgroup>
 			<thead>
-				<tr class="h-16">
+				<tr class="h-10">
 					<th>開始</th>
 					<th>結束</th>
+					<th>時間</th>
 					<th>名稱</th>
 					<th>講者</th>
 					<th>備註</th>
@@ -196,7 +209,7 @@
 				</tr>
 			</thead>
 
-			<tbody>
+			<tbody class="*:h-10">
 				{#each events as e}
 					<tr
 						class={[
@@ -227,10 +240,11 @@
 							></div>
 						</td>
 						<td>{@render editableText(e, 'end')}</td>
+						<td>{minutesToTime((e.end || 0) - (e.start || 0))}</td>
 						<td>{@render editableText(e, 'name')}</td>
 						<td>{@render editableText(e, 'speaker')}</td>
 						<td>{@render editableText(e, 'note')}</td>
-						<td class="py-0 text-3xl">{@render editableText(e, 'info_card')}</td>
+						<td class="py-0 text-lg">{@render editableText(e, 'info_card')}</td>
 						{#if edit}
 							<td class="py-0"
 								><button type="button" class="btn btn-error w-28" onclick={() => DeleteEvent(e.id)}
@@ -274,7 +288,7 @@
 								<textarea class="input" bind:value={newNote} placeholder="備註"></textarea>
 							</label>
 						</td>
-						<td class="py-0 text-3xl">
+						<td class="py-0 text-lg">
 							<label class="swap swap-flip">
 								<!-- this hidden checkbox controls the state -->
 								<input type="checkbox" bind:checked={newInfoCard} />
