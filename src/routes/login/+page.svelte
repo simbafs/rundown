@@ -23,13 +23,14 @@
 
 		console.log({ otp });
 
-		verify?.(otp).then((u) => {
+		verify?.(otp).then(() => {
 			goto('/');
 		});
 	}
 </script>
 
-<h1 class="text-4xl font-bold">Login</h1>
+<h1 class="text-4xl font-bold">登入</h1>
+
 {#if !sent}
 	<form class="flex flex-col gap-4" onsubmit={handleSend}>
 		<label class="floating-label">
@@ -59,3 +60,5 @@
 		<button class="btn btn-primary w-full">Login</button>
 	</form>
 {/if}
+
+<div class="">有帳號了嗎？<a href="/register" class="link">👉註冊👈</a></div>

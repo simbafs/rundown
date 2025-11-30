@@ -15,7 +15,7 @@
 		loading = true;
 		Register(username, email, password, password_confirm)
 			.then(() => {
-			    sent = true
+				sent = true;
 			})
 			.catch((err) => {
 				error = `註冊失敗: ${err.message}`;
@@ -67,10 +67,12 @@
 		/>
 	</label>
 	<button type="submit" class="btn btn-primary"
-		>{#if loading}<span class="loading loading-spinner"></span>{:else}Register{/if}</button
+		>{#if loading}<span class="loading loading-spinner"
+			></span>{:else if sent}請收信{:else}發送註冊信件{/if}</button
 	>
 </form>
-<div class="">or <a href="/login" class="link">login</a></div>
+
+<div class="">沒有帳號？<a href="/login" class="link">👉登入👈</a></div>
 
 {#if sent}
 	<div role="alert" class="alert alert-success alert-soft">
