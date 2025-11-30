@@ -64,6 +64,35 @@ export function GetCurrentUID() {
 	return pb.authStore.record?.id || '';
 }
 
+export function ListUser() {
+	return pb.collection(Collections.User).getFullList<UserRecord>();
+}
+
+export async function ListAndSubscribeUser(cb: (users: UserRecord[]) => void) {
+	if (!IsLogined()) throw ErrUnauthroized;
+
+	let users = await ListUser();
+	cb(users);
+
+	return pb.collection(Collections.User).subscribe('*', (e) => {
+		const id = e.record.id;
+
+		switch (e.action) {
+			case 'create':
+				users = [...users, e.record];
+				break;
+			case 'update':
+				users = users.map((u) => (u.id === id ? e.record : u));
+				break;
+			case 'delete':
+				users = users.filter((u) => u.id !== id);
+				break;
+		}
+		users = users.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+		cb(users);
+	});
+}
+
 export const ErrUnauthroized = new Error('Unauthorized');
 
 //////////////
@@ -75,10 +104,39 @@ export type ExpandedActivityResponse = ActivityResponse<{
 	member: UserRecord[];
 }>;
 
-export async function ListActivity(page = 1) {
+export async function ListActivity() {
 	return pb
 		.collection(Collections.Activity)
-		.getList<ExpandedActivityResponse>(page, 50, { sort: '-created', expand: 'owner,member' });
+		.getFullList<ExpandedActivityResponse>({ sort: '+created', expand: 'owner,member' });
+}
+
+export async function ListAndSubscribeActivity(cb: (events: ExpandedActivityResponse[]) => void) {
+	if (!IsLogined()) throw ErrUnauthroized;
+
+	let activities = await ListActivity();
+	cb(activities);
+
+	return pb.collection(Collections.Activity).subscribe<ExpandedActivityResponse>(
+		'*',
+		(e) => {
+			const id = e.record.id;
+
+			switch (e.action) {
+				case 'create':
+					activities = [...activities, e.record];
+					break;
+				case 'update':
+					activities = activities.map((ev) => (ev.id === id ? e.record : ev));
+					break;
+				case 'delete':
+					activities = activities.filter((ev) => ev.id !== id);
+					break;
+			}
+			activities = activities.sort((a, b) => Date.parse(a.created) - Date.parse(b.created));
+			cb(activities);
+		},
+		{ expand: 'owner,member' },
+	);
 }
 
 export async function GetActivity(aid: string) {
@@ -97,7 +155,7 @@ export async function CreateActivity(name: string) {
 		.create<ExpandedActivityResponse>({ name, owner }, { expand: 'owner,member' });
 }
 
-export async function AddAdmin(aid: string, uid: string) {
+export async function AddMember(aid: string, uid: string) {
 	if (!IsLogined()) throw ErrUnauthroized;
 
 	return pb.collection(Collections.Activity).update<ExpandedActivityResponse>(
@@ -109,7 +167,7 @@ export async function AddAdmin(aid: string, uid: string) {
 	);
 }
 
-export async function RemoveAdmin(aid: string, uid: string) {
+export async function RemoveMember(aid: string, uid: string) {
 	if (!IsLogined()) throw ErrUnauthroized;
 
 	return pb.collection(Collections.Activity).update<ExpandedActivityResponse>(
