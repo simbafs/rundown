@@ -10,6 +10,7 @@
 		IsEventReady,
 		IsEventTimeout,
 		ListAndSubscribeEvent,
+		ResetEventDone,
 		UpdateEvent,
 	} from '$lib/rundown';
 	import { type EventRecord } from '$lib/rundown/pocketbase';
@@ -184,7 +185,12 @@
 					<th>切換字卡</th>
 					{#if edit}
 						<th>
-							<button type="button" class="btn btn-secondary w-28">Reset Done</button>
+							<button
+								type="button"
+								class="btn btn-secondary w-28"
+								onclick={() => events !== null && ResetEventDone(events.map((e) => e.id))}
+								>Reset Done</button
+							>
 						</th>
 					{/if}
 				</tr>

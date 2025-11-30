@@ -206,6 +206,15 @@ export async function UpdateEvent(eid: string, data: Partial<EventRecord>) {
 	return pb.collection(Collections.Event).update<EventResponse>(eid, data);
 }
 
+export async function ResetEventDone(eids: string[]) {
+	if (!IsLogined()) throw ErrUnauthroized;
+
+	// send multiple update requests in parallel
+	return Promise.all(
+		eids.map((eid) => pb.collection(Collections.Event).update<EventResponse>(eid, { done: false })),
+	);
+}
+
 export async function DeleteEvent(eid: string) {
 	if (!IsLogined()) throw ErrUnauthroized;
 
