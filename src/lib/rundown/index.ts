@@ -15,6 +15,23 @@ const pb = new pocketbase('http://localhost:8090') as TypedPocketBase;
 // Authentication //
 ////////////////////
 
+export async function Register(
+	username: string,
+	email: string,
+	password: string,
+	passwordConfirm: string,
+) {
+	return pb
+		.collection(Collections.User)
+		.create<UserResponse>({
+			username,
+			email,
+			password,
+			passwordConfirm,
+		})
+		.then(() => pb.collection(Collections.User).requestVerification(email));
+}
+
 /**
  * @example
  *  LoginWithOTP('user@example.com')
