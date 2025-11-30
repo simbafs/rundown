@@ -137,7 +137,7 @@
 			</label>
 		{:else if field == 'note'}
 			<textarea
-				class="input input-bordered"
+				class="input"
 				placeholder="備註"
 				onchange={editEvent(e.id, field)}
 				defaultvalue={e[field]}
@@ -145,14 +145,14 @@
 		{:else if typeof e[field] == 'number'}
 			<input
 				type="time"
-				class="input input-bordered w-32"
+				class="input w-32"
 				defaultvalue={minutesToTime(e[field])}
 				onchange={editEvent(e.id, field)}
 			/>
 		{:else}
 			<input
 				type="text"
-				class="input input-bordered w-32"
+				class="input w-32"
 				defaultvalue={e[field]}
 				onchange={editEvent(e.id, field)}
 			/>
@@ -247,43 +247,31 @@
 						<td>
 							<label class="floating-label">
 								<span>開始時間</span>
-								<input type="time" class="input input-bordered" bind:value={newStart} required />
+								<input type="time" class="input" bind:value={newStart} required />
 							</label>
 						</td>
 						<td>
 							<label class="floating-label">
 								<span>結束時間</span>
-								<input type="time" class="input input-bordered" bind:value={newEnd} required />
+								<input type="time" class="input" bind:value={newEnd} required />
 							</label>
 						</td>
 						<td>
 							<label class="floating-label w-32">
 								<span>名稱</span>
-								<input
-									type="text"
-									class="input input-bordered"
-									bind:value={newName}
-									placeholder="名稱"
-									required
-								/>
+								<input type="text" class="input" bind:value={newName} placeholder="名稱" required />
 							</label>
 						</td>
 						<td>
 							<label class="floating-label w-32">
 								<span>講者</span>
-								<input
-									type="text"
-									class="input input-bordered"
-									bind:value={newSpeaker}
-									placeholder="講者"
-								/>
+								<input type="text" class="input" bind:value={newSpeaker} placeholder="講者" />
 							</label>
 						</td>
 						<td>
 							<label class="floating-label">
 								<span>備註</span>
-								<textarea class="input input-bordered" bind:value={newNote} placeholder="備註"
-								></textarea>
+								<textarea class="input" bind:value={newNote} placeholder="備註"></textarea>
 							</label>
 						</td>
 						<td class="py-0 text-3xl">
