@@ -32,9 +32,10 @@
 		</span>
 		<span class="navbar-end gap-2">
 			{#if logined}
-				<button class="btn btn-ghost" onclick={Logout}>Logout</button>
+				<a href="/activities" class="btn btn-ghost">活動</a>
+				<button class="btn btn-ghost" onclick={Logout}>登出</button>
 			{:else}
-				<a href="/login" class="btn btn-ghost">Login</a>
+				<a href="/login" class="btn btn-ghost">登入</a>
 			{/if}
 		</span>
 	</div>

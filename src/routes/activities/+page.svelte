@@ -126,7 +126,7 @@
 							onclick={() =>
 								TransferOwnership(activity.id, member.id).then(() =>
 									infoToast(`已將 ${activity.name} 所有權轉移給 ${member.name}`),
-								)}>轉成 Owner</button
+								)}>轉移所有權</button
 						>
 						<button
 							class="btn btn-error"
