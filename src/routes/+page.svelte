@@ -137,7 +137,7 @@
 			</label>
 		{:else if field == 'note'}
 			<textarea
-				class="input"
+				class="input bg-base-100/60 pt-1"
 				placeholder="備註"
 				onchange={editEvent(e.id, field)}
 				defaultvalue={e[field]}
@@ -145,14 +145,14 @@
 		{:else if typeof e[field] == 'number'}
 			<input
 				type="time"
-				class="input w-32"
+				class="input bg-base-100/60 w-32"
 				defaultvalue={minutesToTime(e[field])}
 				onchange={editEvent(e.id, field)}
 			/>
 		{:else}
 			<input
 				type="text"
-				class="input w-32"
+				class="input bg-base-100/60 w-32"
 				defaultvalue={e[field]}
 				onchange={editEvent(e.id, field)}
 			/>
@@ -200,7 +200,7 @@
 						<th>
 							<button
 								type="button"
-								class="btn btn-secondary w-28"
+								class="btn btn-secondary w-full"
 								onclick={() => events !== null && ResetEventDone(events.map((e) => e.id))}
 								>Reset Done</button
 							>
@@ -214,10 +214,10 @@
 					<tr
 						class={[
 							{
-								'bg-yellow-200': IsEventReady(e, now),
-								'bg-green-200/50': IsEventOngoing(e, now), // allow underlay progress bar to be seen
-								'bg-sky-200': IsEventDone(e, now),
-								'bg-rose-200': IsEventTimeout(e, now),
+								'bg-yellow-200 dark:bg-yellow-700': IsEventReady(e, now),
+								'bg-green-200/50 dark:bg-green-700/50': IsEventOngoing(e, now), // allow underlay progress bar to be seen
+								'bg-sky-200 dark:bg-sky-700': IsEventDone(e, now),
+								'bg-rose-200 dark:bg-rose-700': IsEventTimeout(e, now),
 							},
 							{
 								'cursor-pointer hover:bg-rose-300 active:bg-rose-400':
@@ -235,7 +235,7 @@
 						<td
 							>{@render editableText(e, 'start')}
 							<div
-								class="absolute top-0 left-0 -z-10 h-full bg-green-600/30"
+								class="absolute top-0 left-0 -z-10 h-full bg-green-300 dark:bg-green-700"
 								style="width: {EventProgress(e, now) * 100}%"
 							></div>
 						</td>
@@ -244,11 +244,13 @@
 						<td>{@render editableText(e, 'name')}</td>
 						<td>{@render editableText(e, 'speaker')}</td>
 						<td>{@render editableText(e, 'note')}</td>
-						<td class="py-0 text-lg">{@render editableText(e, 'info_card')}</td>
+						<td class="text-center text-lg">{@render editableText(e, 'info_card')}</td>
 						{#if edit}
-							<td class="py-0"
-								><button type="button" class="btn btn-error w-28" onclick={() => DeleteEvent(e.id)}
-									>Remove</button
+							<td
+								><button
+									type="button"
+									class="btn btn-error w-full text-white"
+									onclick={() => DeleteEvent(e.id)}>Remove</button
 								></td
 							>
 						{/if}
@@ -289,7 +291,7 @@
 								<textarea class="input" bind:value={newNote} placeholder="備註"></textarea>
 							</label>
 						</td>
-						<td class="py-0 text-lg">
+						<td class="text-center text-lg">
 							<label class="swap swap-flip">
 								<!-- this hidden checkbox controls the state -->
 								<input type="checkbox" bind:checked={newInfoCard} />
@@ -299,7 +301,7 @@
 							</label>
 						</td>
 						<td>
-							<button type="submit" class="btn btn-primary w-28">Add</button>
+							<button type="submit" class="btn btn-primary w-full">Add</button>
 						</td>
 					</tr>
 				</tfoot>
