@@ -114,11 +114,12 @@
 		<h2 class="text-center text-3xl font-semibold">{activity.name}</h2>
 		<ul class="list">
 			<li class="list-row">
-				<div>Owner: <span class="font-bold">{activity.expand.owner.name}</span></div>
+				<div>Owner: <span class="font-bold underline">{activity.expand.owner.name}</span></div>
 			</li>
+			<li class="list-row">Members: </li>
 			{#each activity.expand.member as member}
 				<li class="list-row">
-					<div class="list-col-grow ml-4 font-bold">{member.name}</div>
+					<div class="list-col-grow ml-4 font-bold underline">{member.name}</div>
 					{#if activity.owner == GetCurrentUID()}
 						<button
 							class="btn btn-info"
