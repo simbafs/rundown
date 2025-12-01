@@ -188,7 +188,7 @@
 				{/if}
 			</colgroup>
 			<thead>
-				<tr class="h-10">
+				<tr class="*:border-base-300 h-10 *:not-last:border-r">
 					<th>開始</th>
 					<th>結束</th>
 					<th>時間</th>
@@ -223,7 +223,7 @@
 								'cursor-pointer hover:bg-rose-300 active:bg-rose-400':
 									IsEventTimeout(e, now) && !edit,
 							},
-							'relative',
+							'*:border-base-300 relative *:not-last:border-r',
 						]}
 						onclick={() => {
 							if (edit || !IsEventTimeout(e, now)) return;
@@ -257,7 +257,7 @@
 			</tbody>
 			{#if edit}
 				<tfoot>
-					<tr>
+					<tr class="*:border-base-300 *:not-last:border-r">
 						<td>
 							<label class="floating-label">
 								<span>開始時間</span>
@@ -270,6 +270,7 @@
 								<input type="time" class="input" bind:value={newEnd} required />
 							</label>
 						</td>
+						<td></td>
 						<td>
 							<label class="floating-label w-32">
 								<span>名稱</span>
