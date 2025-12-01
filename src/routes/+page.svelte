@@ -4,11 +4,13 @@
 		CanEdit,
 		CreateEvent,
 		DeleteEvent,
+		ErrUnauthroized,
 		EventProgress,
 		IsEventDone,
 		IsEventOngoing,
 		IsEventReady,
 		IsEventTimeout,
+		IsLogined,
 		ListAndSubscribeEvent,
 		ResetEventDone,
 		UpdateEvent,
@@ -43,7 +45,7 @@
 		const unsub = ListAndSubscribeEvent(activity, (e) => {
 			events = e;
 		}).catch((err) => {
-			errorToast(`Failed to load events: ${err.message}`);
+			if (err !== ErrUnauthroized) errorToast(`Failed to load events: ${err.message}`);
 		});
 
 		return () => {
@@ -221,12 +223,12 @@
 							},
 							{
 								'cursor-pointer hover:bg-rose-300 active:bg-rose-400':
-									IsEventTimeout(e, now) && !edit,
+									IsEventTimeout(e, now) && !edit && IsLogined(),
 							},
 							'*:border-base-300 relative *:not-last:border-r',
 						]}
 						onclick={() => {
-							if (edit || !IsEventTimeout(e, now)) return;
+							if (edit || !IsEventTimeout(e, now) || !IsLogined()) return;
 							UpdateEvent(e.id, { done: true }).catch((err) => {
 								errorToast(`Failed to update event: ${err.message}`);
 							});

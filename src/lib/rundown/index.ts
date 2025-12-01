@@ -220,10 +220,10 @@ export async function ListEvent(aid: string) {
 }
 
 export async function ListAndSubscribeEvent(aid: string, cb: (events: EventRecord[]) => void) {
-	if (!IsLogined()) throw ErrUnauthroized;
-
 	let events = await ListEvent(aid);
 	cb(events);
+
+	if (!IsLogined()) throw ErrUnauthroized;
 	let ids = new Set(events.map((e) => e.id));
 
 	return pb.collection(Collections.Event).subscribe('*', (e) => {

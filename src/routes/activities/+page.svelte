@@ -1,7 +1,9 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import {
 		AddMember,
 		CreateActivity,
+		ErrUnauthroized,
 		GetCurrentUID,
 		ListAndSubscribeActivity,
 		ListAndSubscribeUser,
@@ -17,10 +19,9 @@
 	let activity = $derived<ExpandedActivityResponse | undefined>(activities[selected]);
 
 	$effect(() => {
-		const unsub = ListAndSubscribeActivity((a) => {
-			activities = a;
-		}).catch((err) => {
-			errorToast(`Failed to load activities: ${err.message}`);
+		const unsub = ListAndSubscribeActivity((a) => (activities = a)).catch((err) => {
+			if (err === ErrUnauthroized) goto('/login');
+			else errorToast(`Failed to load activities: ${err.message}`);
 		});
 
 		return () => {
@@ -32,7 +33,8 @@
 	let usersMap = $derived(new Map(users.map((u) => [u.id, u])));
 	$effect(() => {
 		const unsub = ListAndSubscribeUser((u) => (users = u)).catch((err) => {
-			errorToast(`Failed to load users: ${err.message}`);
+			if (err === ErrUnauthroized) goto('/login');
+			else errorToast(`Failed to load users: ${err.message}`);
 		});
 
 		return () => {
@@ -116,7 +118,7 @@
 			<li class="list-row">
 				<div>Owner: <span class="font-bold underline">{activity.expand.owner.name}</span></div>
 			</li>
-			<li class="list-row">Members: </li>
+			<li class="list-row">Members:</li>
 			{#each activity.expand.member as member}
 				<li class="list-row">
 					<div class="list-col-grow ml-4 font-bold underline">{member.name}</div>
